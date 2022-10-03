@@ -8,6 +8,7 @@ import {
   mannschaftenSpielerDB,
   deleteSpielerMannschaftDB,
   getCodeDB,
+  sJoinTeamDB,
 } from '../models/mannschaftDB.js';
 
 const validateAdd = validator({
@@ -26,10 +27,6 @@ const validateAdd = validator({
       required: true,
       type: 'string',
     },
-    zugangscode: {
-      required: true,
-      type: 'string',
-    },
     t_id: {
       required: true,
       type: 'number',
@@ -42,8 +39,8 @@ const addTeam = async (req, res) => {
   if (!validateAdd(req.body)) return res.status(400).send(validateAdd.errors);
   console.log(req.body);
 
-  const { titel, beschreibung, farbe, zugangscode, t_id } = req.body;
-  const result = await addTeamDB(titel, beschreibung, farbe, zugangscode, t_id);
+  const { titel, beschreibung, farbe, t_id } = req.body;
+  const result = await addTeamDB(titel, beschreibung, farbe, t_id);
 
   if (result) return res.status(200).json(result);
 
@@ -52,8 +49,8 @@ const addTeam = async (req, res) => {
 
 const mannschaftenTrainer = async (req, res) => {
   console.log(req.body);
-  const { t_id } = req.body;
-  const result = await mannschaftenTrainerDB(t_id);
+  const { id } = req.params;
+  const result = await mannschaftenTrainerDB(id);
 
   if (result) return res.status(200).json(result);
 
@@ -121,6 +118,15 @@ const getCode = async (req, res) => {
   return res.status(500).send('Error when getting the code');
 };
 
+const sJoinTeam = async (req, res) => {
+  const { zugangscode, s_id } = req.body;
+
+  const result = await sJoinTeamDB(zugangscode, s_id);
+
+  if (result) return res.status(200).send('Erfolgreich beigetreten');
+  return res.status(404).send('Dieses Team gibt es nicht, oder es ist ein Fehler aufgetreten');
+};
+
 export {
   addTeam,
   mannschaftenTrainer,
@@ -130,4 +136,5 @@ export {
   deleteSpielerMannschaftDel,
   mannschaftenSpieler,
   getCode,
+  sJoinTeam,
 };

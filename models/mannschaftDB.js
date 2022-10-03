@@ -1,6 +1,6 @@
 import { query, pool } from '../db/index.js';
 
-const addTeamDB = async (titel, beschreibung, farbe, zugangscode, t_id) => {
+const addTeamDB = async (titel, beschreibung, farbe, t_id) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -14,8 +14,8 @@ const addTeamDB = async (titel, beschreibung, farbe, zugangscode, t_id) => {
 
     // Mannschaft erstellen
     const { rows: team } = await client.query(
-      'INSERT INTO mannschaft (titel, zugangscode, farbe, beschreibung) VALUES ($1, $2, $3, $4) returning *;',
-      [titel, zugangscode, farbe, beschreibung],
+      'INSERT INTO mannschaft (titel, zugangscode, farbe, beschreibung) VALUES ($1, substr(MD5(random()::text),0,11), $2, $3) returning *;',
+      [titel, farbe, beschreibung],
     );
 
     // Verknüpfnung erstellen
@@ -141,8 +141,22 @@ const getCodeDB = async (id) => {
   const { rows } = await query('SELECT zugangscode from mannschaft where m_id = $1;', [id]);
 
   if (rows[0]) return rows[0];
-  
+
   return false;
+};
+
+const sJoinTeamDB = async (code, s_id) => {
+  const { rows: zcode } = await query('SELECT * from mannschaft where zugangscode = $1;', [code]);
+  if (!zcode[0]) return false;
+
+  const { rows } = await query(
+    'INSERT INTO spieler_mannschaft (s_id, m_id) VALUES ($1, $2) returning *;',
+    [s_id, zcode[0].m_id],
+  );
+
+  if (!rows[0]) return false;
+
+  return true;
 };
 
 export {
@@ -154,4 +168,5 @@ export {
   deleteSpielerMannschaftDB,
   mannschaftenSpielerDB,
   getCodeDB,
+  sJoinTeamDB,
 };
