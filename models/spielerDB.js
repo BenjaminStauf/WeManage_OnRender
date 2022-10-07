@@ -35,14 +35,7 @@ const changeSpielerKommtDB = async (id, kommt, train_id) => {
   return true;
 };
 
-const changeSpielerSettingsDB = async ({
-  id,
-  vorname,
-  nachname,
-  email,
-  passwort,
-  avatare,
-}) => {
+const changeSpielerSettingsDB = async ({ id, vorname, nachname, email, passwort, avatare }) => {
   let dbPool = pool;
 
   try {
@@ -84,10 +77,54 @@ const getSpielerByIdDB = async (id) => {
   if (rows[0]) return rows[0];
   else return null;
 };
+
+const getSpielerHealthDB = async (id) => {
+  // Get Health from Database
+  const { rows } = await query('SELECT * FROM spieler_health where "fkSpieler" = $1', [id]);
+
+  if (rows[0]) return rows;
+  else return null;
+};
+
+const changeSpielerHealthDB = async (id, allg, ausdauer, kraft, sonstige) => {
+  try {
+    const { rows } = await query(
+      'UPDATE spieler_health SET allgemein = $1, ausdauer = $2, kraft = $3, sonstige = $4 WHERE "fkSpieler" = $5 returning *;',
+      [allg, ausdauer, kraft, sonstige, id],
+    );
+
+    if (rows[0]) return rows;
+    return false;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
+
+const getTrainerSpielerHealthDB = async (id) => {
+  // Get Health from Database
+  const { rows } = await query(
+    `SELECT m.titel, s.vorname, s.nachname, s.avatarpath, sh.allgemein, sh.kraft, sh.ausdauer, sh.sonstige
+from spieler_health sh
+         JOIN spieler s on s.s_id = sh."fkSpieler"
+         JOIN spieler_mannschaft sm on s.s_id = sm.s_id
+         JOIN mannschaft m on m.m_id = sm.m_id WHERE m.m_id = $1`,
+    [id],
+  );
+
+  console.log(rows);
+
+  if (rows[0]) return rows;
+  else return false;
+};
+
 export {
   getAllSpielerDB,
   getSpielerDB,
   changeSpielerKommtDB,
   changeSpielerSettingsDB,
   getSpielerByIdDB,
+  getSpielerHealthDB,
+  changeSpielerHealthDB,
+  getTrainerSpielerHealthDB,
 };
