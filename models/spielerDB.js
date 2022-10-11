@@ -21,11 +21,11 @@ from spieler s
   else return false;
 };
 
-const changeSpielerKommtDB = async (id, kommt, train_id) => {
+const changeSpielerKommtDB = async (id, kommt, train_id, begründung) => {
   try {
     const { rows } = await query(
-      'UPDATE spielerbesuchttraining SET kommt = $1 WHERE fk_s_id = $2 and fk_training_id = $3;',
-      [kommt, id, train_id],
+      'UPDATE spielerbesuchttraining SET kommt = $1, abwesenheitsgrund = $4 WHERE fk_s_id = $2 and fk_training_id = $3;',
+      [kommt, id, train_id, begründung],
     );
   } catch (error) {
     console.log(error);
@@ -118,6 +118,30 @@ from spieler_health sh
   else return false;
 };
 
+const getSpielerAbwendheitenDB = async (s_id) => {
+  const { rows } = await query(
+    `SELECT
+    t.titel as Training,
+    t.trainingdatum as Datum,
+    sbt.abwesenheitsgrund AS Grund,
+    m.titel as Team
+    FROM spielerbesuchttraining sbt
+    JOIN spieler s on s.s_id = sbt.fk_s_id
+    JOIN trainings t on t.training_id = sbt.fk_training_id
+    JOIN mannschaft m on m.m_id = t.fk_m_id
+
+    WHERE s.s_id = $1 AND sbt.kommt = false
+    GROUP BY sbt.abwesenheitsgrund, t.trainingdatum, t.titel, m.titel
+    HAVING t.trainingdatum < current_date
+    ORDER BY trainingdatum DESC;`,
+    [s_id],
+  );
+
+  console.log(rows);
+
+  if (rows[0]) return rows;
+  else return null;
+};
 
 export {
   getAllSpielerDB,
@@ -128,4 +152,5 @@ export {
   getSpielerHealthDB,
   changeSpielerHealthDB,
   getTrainerSpielerHealthDB,
+  getSpielerAbwendheitenDB,
 };
